@@ -1,0 +1,13 @@
+name: workplace_venv
+dependencies:
+  - python=3.6
+  - numpy
+  - matplotlib
+  - scipy
+  - simplejson
+  - scikit-learn
+  - pip:
+    - eyed3
+    - pydub
+    - hmmlearn  # might need to get built wheels
+    # - pytest  # for testing only

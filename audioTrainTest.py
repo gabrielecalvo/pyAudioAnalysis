@@ -3,7 +3,7 @@ import numpy
 import time
 import os
 import glob
-import cPickle
+import pickle
 import shutil
 import audioop
 import signal
@@ -21,7 +21,7 @@ import sklearn.decomposition
 import sklearn.ensemble
 
 def signal_handler(signal, frame):
-    print 'You pressed Ctrl+C! - EXIT'
+    print('You pressed Ctrl+C! - EXIT')
     os.system("stty -cbreak echo")
     sys.exit(0)
 
@@ -122,7 +122,7 @@ def randSplitFeatures(features, partTrain):
     featuresTest = []
     for i, f in enumerate(features):
         [numOfSamples, numOfDims] = f.shape
-        randperm = numpy.random.permutation(range(numOfSamples))
+        randperm = numpy.random.permutation(list(range(numOfSamples)))
         nTrainSamples = int(round(partTrain * numOfSamples))
         featuresTrain.append(f[randperm[0:nTrainSamples]])
         featuresTest.append(f[randperm[nTrainSamples::]])
@@ -296,7 +296,7 @@ def featureAndTrain(listOfDirs, mtWin, mtStep, stWin, stStep, classifierType, mo
     [features, classNames, _] = aF.dirsWavFeatureExtraction(listOfDirs, mtWin, mtStep, stWin, stStep, computeBEAT=computeBEAT)
 
     if len(features) == 0:
-        print "trainSVM_feature ERROR: No data found in any input folder!"
+        print("trainSVM_feature ERROR: No data found in any input folder!")
         return
 
     numOfFeatures = features[0].shape[1]
@@ -306,7 +306,7 @@ def featureAndTrain(listOfDirs, mtWin, mtStep, stWin, stStep, classifierType, mo
 
     for i, f in enumerate(features):
         if len(f) == 0:
-            print "trainSVM_feature ERROR: " + listOfDirs[i] + " folder is empty or non-existing!"
+            print("trainSVM_feature ERROR: " + listOfDirs[i] + " folder is empty or non-existing!")
             return
 
     # STEP B: Classifier Evaluation and Parameter Selection:
@@ -330,13 +330,13 @@ def featureAndTrain(listOfDirs, mtWin, mtStep, stWin, stStep, classifierType, mo
             if (not numpy.isnan(temp).any()) and (not numpy.isinf(temp).any()) :
                 fTemp.append(temp.tolist())
             else:
-                print "NaN Found! Feature vector not used for training"
+                print("NaN Found! Feature vector not used for training")
         features2.append(numpy.array(fTemp))
     features = features2
 
     bestParam = evaluateClassifier(features, classNames, 100, classifierType, classifierParams, 0, perTrain)
 
-    print "Selected params: {0:.5f}".format(bestParam)
+    print("Selected params: {0:.5f}".format(bestParam))
 
     C = len(classNames)
     [featuresNorm, MEAN, STD] = normalizeFeatures(features)        # normalize features
@@ -362,30 +362,30 @@ def featureAndTrain(listOfDirs, mtWin, mtStep, stWin, stStep, classifierType, mo
         X = X.tolist()
         Y = Y.tolist()
         fo = open(modelName, "wb")
-        cPickle.dump(X, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(Y,  fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(MEAN, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(STD,  fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(classNames,  fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(bestParam,  fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(mtWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(mtStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(stWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(stStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(computeBEAT, fo, protocol=cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(X, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(Y,  fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(MEAN, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(STD,  fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(classNames,  fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(bestParam,  fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(mtWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(mtStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(stWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(stStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(computeBEAT, fo, protocol=pickle.HIGHEST_PROTOCOL)
         fo.close()
     elif classifierType == "svm" or classifierType == "svm_rbf" or classifierType == "randomforest" or classifierType == "gradientboosting" or classifierType == "extratrees":
         with open(modelName, 'wb') as fid:                                            # save to file
-            cPickle.dump(Classifier, fid)            
+            pickle.dump(Classifier, fid)            
         fo = open(modelName + "MEANS", "wb")
-        cPickle.dump(MEAN, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(STD, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(classNames, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(mtWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(mtStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(stWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(stStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-        cPickle.dump(computeBEAT, fo, protocol=cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(MEAN, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(STD, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(classNames, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(mtWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(mtStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(stWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(stStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(computeBEAT, fo, protocol=pickle.HIGHEST_PROTOCOL)
         fo.close()        
 
 
@@ -422,7 +422,7 @@ def featureAndTrainRegression(dirName, mtWin, mtStep, stWin, stStep, modelType, 
         regressionLabels.append(curRegressionLabels)                          # curRegressionLabels is the list of values for the current regression problem
         regressionNames.append(ntpath.basename(c).replace(".csv", ""))        # regression task name  
     if len(features) == 0:
-        print "ERROR: No data found in any input folder!"
+        print("ERROR: No data found in any input folder!")
         return
 
     numOfFeatures = features.shape[1]
@@ -439,9 +439,9 @@ def featureAndTrainRegression(dirName, mtWin, mtStep, stWin, stStep, modelType, 
 
     for iRegression, r in enumerate(regressionNames):
         # get optimal classifeir parameter:
-        print "Regression task " + r
+        print("Regression task " + r)
         bestParam = evaluateRegression(features, regressionLabels[iRegression], 100, modelType, modelParams)
-        print "Selected params: {0:.5f}".format(bestParam)
+        print("Selected params: {0:.5f}".format(bestParam))
 
         [featuresNorm, MEAN, STD] = normalizeFeatures([features])        # normalize features
 
@@ -453,15 +453,15 @@ def featureAndTrainRegression(dirName, mtWin, mtStep, stWin, stStep, modelType, 
 
         if modelType == "svm" or modelType == "svm_rbf":
             with open(modelName + "_" + r, 'wb') as fid:                                            # save to file
-                cPickle.dump(Classifier, fid)            
+                pickle.dump(Classifier, fid)            
             fo = open(modelName + "_" + r + "MEANS", "wb")
-            cPickle.dump(MEAN, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(STD,  fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(mtWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(mtStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(stWin, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(stStep, fo, protocol=cPickle.HIGHEST_PROTOCOL)
-            cPickle.dump(computeBEAT, fo, protocol=cPickle.HIGHEST_PROTOCOL)
+            pickle.dump(MEAN, fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(STD,  fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(mtWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(mtStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(stWin, fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(stStep, fo, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(computeBEAT, fo, protocol=pickle.HIGHEST_PROTOCOL)
             fo.close()
         '''             TODO
         elif modelType == "randomforest":
@@ -481,25 +481,25 @@ def featureAndTrainRegression(dirName, mtWin, mtStep, stWin, stStep, modelType, 
     #    elif classifierType == "knn":
 
 
-def loadKNNModel(kNNModelName, isRegression=False):
+def load_knn_model(knn_model_path, is_regression=False):
     try:
-        fo = open(kNNModelName, "rb")
+        fo = open(knn_model_path, "rb")
     except IOError:
-        print "didn't find file"
+        print("didn't find file")
         return
     try:
-        X = cPickle.load(fo)
-        Y = cPickle.load(fo)
-        MEAN = cPickle.load(fo)
-        STD = cPickle.load(fo)
-        if not isRegression:
-            classNames = cPickle.load(fo)
-        K = cPickle.load(fo)
-        mtWin = cPickle.load(fo)
-        mtStep = cPickle.load(fo)
-        stWin = cPickle.load(fo)
-        stStep = cPickle.load(fo)
-        computeBEAT = cPickle.load(fo)
+        X = pickle.load(fo)
+        Y = pickle.load(fo)
+        MEAN = pickle.load(fo)
+        STD = pickle.load(fo)
+        if not is_regression:
+            classNames = pickle.load(fo)
+        K = pickle.load(fo)
+        mtWin = pickle.load(fo)
+        mtStep = pickle.load(fo)
+        stWin = pickle.load(fo)
+        stStep = pickle.load(fo)
+        computeBEAT = pickle.load(fo)
     except:
         fo.close()
     fo.close()
@@ -511,7 +511,7 @@ def loadKNNModel(kNNModelName, isRegression=False):
 
     Classifier = kNN(X, Y, K)  # Note: a direct call to the kNN constructor is used here
 
-    if isRegression:
+    if is_regression:
         return(Classifier, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT)
     else:
         return(Classifier, MEAN, STD, classNames, mtWin, mtStep, stWin, stStep, computeBEAT)
@@ -527,18 +527,18 @@ def loadSVModel(SVMmodelName, isRegression=False):
     try:
         fo = open(SVMmodelName+"MEANS", "rb")
     except IOError:
-            print "Load SVM Model: Didn't find file"
+            print("Load SVM Model: Didn't find file")
             return
     try:
-        MEAN = cPickle.load(fo)
-        STD = cPickle.load(fo)
+        MEAN = pickle.load(fo)
+        STD = pickle.load(fo)
         if not isRegression:
-            classNames = cPickle.load(fo)
-        mtWin = cPickle.load(fo)
-        mtStep = cPickle.load(fo)
-        stWin = cPickle.load(fo)
-        stStep = cPickle.load(fo)
-        computeBEAT = cPickle.load(fo)
+            classNames = pickle.load(fo)
+        mtWin = pickle.load(fo)
+        mtStep = pickle.load(fo)
+        stWin = pickle.load(fo)
+        stStep = pickle.load(fo)
+        computeBEAT = pickle.load(fo)
 
     except:
         fo.close()
@@ -549,7 +549,7 @@ def loadSVModel(SVMmodelName, isRegression=False):
 
     COEFF = []
     with open(SVMmodelName, 'rb') as fid:
-        SVM = cPickle.load(fid)    
+        SVM = pickle.load(fid)    
 
     if isRegression:
         return(SVM, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT)
@@ -567,18 +567,18 @@ def loadRandomForestModel(RFmodelName, isRegression=False):
     try:
         fo = open(RFmodelName+"MEANS", "rb")
     except IOError:
-            print "Load Random Forest Model: Didn't find file"
+            print("Load Random Forest Model: Didn't find file")
             return
     try:
-        MEAN = cPickle.load(fo)
-        STD = cPickle.load(fo)
+        MEAN = pickle.load(fo)
+        STD = pickle.load(fo)
         if not isRegression:
-            classNames = cPickle.load(fo)
-        mtWin = cPickle.load(fo)
-        mtStep = cPickle.load(fo)
-        stWin = cPickle.load(fo)
-        stStep = cPickle.load(fo)
-        computeBEAT = cPickle.load(fo)
+            classNames = pickle.load(fo)
+        mtWin = pickle.load(fo)
+        mtStep = pickle.load(fo)
+        stWin = pickle.load(fo)
+        stStep = pickle.load(fo)
+        computeBEAT = pickle.load(fo)
 
     except:
         fo.close()
@@ -589,7 +589,7 @@ def loadRandomForestModel(RFmodelName, isRegression=False):
 
     COEFF = []
     with open(RFmodelName, 'rb') as fid:
-        RF = cPickle.load(fid)    
+        RF = pickle.load(fid)    
 
     if isRegression:
         return(RF, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT)
@@ -606,18 +606,18 @@ def loadGradientBoostingModel(GBModelName, isRegression=False):
     try:
         fo = open(GBModelName+"MEANS", "rb")
     except IOError:
-            print "Load Random Forest Model: Didn't find file"
+            print("Load Random Forest Model: Didn't find file")
             return
     try:
-        MEAN = cPickle.load(fo)
-        STD = cPickle.load(fo)
+        MEAN = pickle.load(fo)
+        STD = pickle.load(fo)
         if not isRegression:
-            classNames = cPickle.load(fo)
-        mtWin = cPickle.load(fo)
-        mtStep = cPickle.load(fo)
-        stWin = cPickle.load(fo)
-        stStep = cPickle.load(fo)
-        computeBEAT = cPickle.load(fo)
+            classNames = pickle.load(fo)
+        mtWin = pickle.load(fo)
+        mtStep = pickle.load(fo)
+        stWin = pickle.load(fo)
+        stStep = pickle.load(fo)
+        computeBEAT = pickle.load(fo)
 
     except:
         fo.close()
@@ -628,7 +628,7 @@ def loadGradientBoostingModel(GBModelName, isRegression=False):
 
     COEFF = []
     with open(GBModelName, 'rb') as fid:
-        GB = cPickle.load(fid)    
+        GB = pickle.load(fid)    
 
     if isRegression:
         return(GB, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT)
@@ -645,18 +645,18 @@ def loadExtraTreesModel(ETmodelName, isRegression=False):
     try:
         fo = open(ETmodelName+"MEANS", "rb")
     except IOError:
-            print "Load Random Forest Model: Didn't find file"
+            print("Load Random Forest Model: Didn't find file")
             return
     try:
-        MEAN = cPickle.load(fo)
-        STD = cPickle.load(fo)
+        MEAN = pickle.load(fo)
+        STD = pickle.load(fo)
         if not isRegression:
-            classNames = cPickle.load(fo)
-        mtWin = cPickle.load(fo)
-        mtStep = cPickle.load(fo)
-        stWin = cPickle.load(fo)
-        stStep = cPickle.load(fo)
-        computeBEAT = cPickle.load(fo)
+            classNames = pickle.load(fo)
+        mtWin = pickle.load(fo)
+        mtStep = pickle.load(fo)
+        stWin = pickle.load(fo)
+        stStep = pickle.load(fo)
+        computeBEAT = pickle.load(fo)
 
     except:
         fo.close()
@@ -667,7 +667,7 @@ def loadExtraTreesModel(ETmodelName, isRegression=False):
 
     COEFF = []
     with open(ETmodelName, 'rb') as fid:
-        GB = cPickle.load(fid)    
+        GB = pickle.load(fid)    
 
     if isRegression:
         return(GB, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT)
@@ -709,15 +709,15 @@ def evaluateClassifier(features, ClassNames, nExp, ClassifierName, Params, param
         nSamplesTotal += f.shape[0]
     if nSamplesTotal > 1000 and nExp > 50:
         nExp = 50
-        print "Number of training experiments changed to 50 due to high number of samples"
+        print("Number of training experiments changed to 50 due to high number of samples")
     if nSamplesTotal > 2000 and nExp > 10:
         nExp = 10
-        print "Number of training experiments changed to 10 due to high number of samples"
+        print("Number of training experiments changed to 10 due to high number of samples")
 
     for Ci, C in enumerate(Params):                # for each param value
                 CM = numpy.zeros((nClasses, nClasses))
                 for e in range(nExp):              # for each cross-validation iteration:
-                    print "Param = {0:.5f} - Classifier Evaluation Experiment {1:d} of {2:d}".format(C, e+1, nExp)
+                    print("Param = {0:.5f} - Classifier Evaluation Experiment {1:d} of {2:d}".format(C, e+1, nExp))
                     # split features:
                     featuresTrain, featuresTest = randSplitFeatures(featuresNorm, perTrain)
                     # train multi-class svms:
@@ -761,36 +761,36 @@ def evaluateClassifier(features, ClassNames, nExp, ClassifierName, Params, param
                 F1All.append(numpy.mean(F1))
                 # print "{0:6.4f}{1:6.4f}{2:6.1f}{3:6.1f}".format(nu, g, 100.0*acAll[-1], 100.0*F1All[-1])
 
-    print ("\t\t"),
+    print(("\t\t"), end=' ')
     for i, c in enumerate(ClassNames):
         if i == len(ClassNames)-1:
-            print "{0:s}\t\t".format(c),
+            print("{0:s}\t\t".format(c), end=' ')
         else:
-            print "{0:s}\t\t\t".format(c),
+            print("{0:s}\t\t\t".format(c), end=' ')
     print ("OVERALL")
-    print ("\tC"),
+    print(("\tC"), end=' ')
     for c in ClassNames:
-        print "\tPRE\tREC\tF1",
-    print "\t{0:s}\t{1:s}".format("ACC", "F1")
+        print("\tPRE\tREC\tF1", end=' ')
+    print("\t{0:s}\t{1:s}".format("ACC", "F1"))
     bestAcInd = numpy.argmax(acAll)
     bestF1Ind = numpy.argmax(F1All)
     for i in range(len(PrecisionClassesAll)):
-        print "\t{0:.3f}".format(Params[i]),
+        print("\t{0:.3f}".format(Params[i]), end=' ')
         for c in range(len(PrecisionClassesAll[i])):
-            print "\t{0:.1f}\t{1:.1f}\t{2:.1f}".format(100.0 * PrecisionClassesAll[i][c], 100.0 * RecallClassesAll[i][c], 100.0 * F1ClassesAll[i][c]),
-        print "\t{0:.1f}\t{1:.1f}".format(100.0 * acAll[i], 100.0 * F1All[i]),
+            print("\t{0:.1f}\t{1:.1f}\t{2:.1f}".format(100.0 * PrecisionClassesAll[i][c], 100.0 * RecallClassesAll[i][c], 100.0 * F1ClassesAll[i][c]), end=' ')
+        print("\t{0:.1f}\t{1:.1f}".format(100.0 * acAll[i], 100.0 * F1All[i]), end=' ')
         if i == bestF1Ind:
-            print "\t best F1",
+            print("\t best F1", end=' ')
         if i == bestAcInd:
-            print "\t best Acc",
-        print
+            print("\t best Acc", end=' ')
+        print()
 
     if parameterMode == 0:    # keep parameters that maximize overall classification accuracy:
-        print "Confusion Matrix:"
+        print("Confusion Matrix:")
         printConfusionMatrix(CMsAll[bestAcInd], ClassNames)
         return Params[bestAcInd]
     elif parameterMode == 1:  # keep parameters that maximize overall F1 measure:
-        print "Confusion Matrix:"
+        print("Confusion Matrix:")
         printConfusionMatrix(CMsAll[bestF1Ind], ClassNames)
         return Params[bestF1Ind]
 
@@ -821,7 +821,7 @@ def evaluateRegression(features, labels, nExp, MethodName, Params):
                 ErrorsBaseline = []
                 for e in range(nExp):             # for each cross-validation iteration:
                     # split features:
-                    randperm = numpy.random.permutation(range(nSamples))
+                    randperm = numpy.random.permutation(list(range(nSamples)))
                     nTrain = int(round(partTrain * nSamples))
                     featuresTrain = [featuresNorm[randperm[i]] for i in range(nTrain)]
                     featuresTest = [featuresNorm[randperm[i+nTrain]] for i in range(nSamples - nTrain)]
@@ -859,12 +859,12 @@ def evaluateRegression(features, labels, nExp, MethodName, Params):
 
     bestInd = numpy.argmin(ErrorsAll)
 
-    print "{0:s}\t\t{1:s}\t\t{2:s}\t\t{3:s}".format("Param", "MSE", "T-MSE", "R-MSE")
+    print("{0:s}\t\t{1:s}\t\t{2:s}\t\t{3:s}".format("Param", "MSE", "T-MSE", "R-MSE"))
     for i in range(len(ErrorsAll)):
-        print "{0:.4f}\t\t{1:.2f}\t\t{2:.2f}\t\t{3:.2f}".format(Params[i], ErrorsAll[i], ErrorsTrainAll[i], ErrorsBaselineAll[i]),
+        print("{0:.4f}\t\t{1:.2f}\t\t{2:.2f}\t\t{3:.2f}".format(Params[i], ErrorsAll[i], ErrorsTrainAll[i], ErrorsBaselineAll[i]), end=' ')
         if i == bestInd:
-            print "\t\t best",
-        print
+            print("\t\t best", end=' ')
+        print()
     return Params[bestInd]
 
 
@@ -878,22 +878,22 @@ def printConfusionMatrix(CM, ClassNames):
     '''
 
     if CM.shape[0] != len(ClassNames):
-        print "printConfusionMatrix: Wrong argument sizes\n"
+        print("printConfusionMatrix: Wrong argument sizes\n")
         return
 
     for c in ClassNames:
         if len(c) > 4:
             c = c[0:3]
-        print "\t{0:s}".format(c),
-    print
+        print("\t{0:s}".format(c), end=' ')
+    print()
 
     for i, c in enumerate(ClassNames):
         if len(c) > 4:
             c = c[0:3]
-        print "{0:s}".format(c),
+        print("{0:s}".format(c), end=' ')
         for j in range(len(ClassNames)):
-            print "\t{0:.2f}".format(100.0 * CM[i][j] / numpy.sum(CM)),
-        print
+            print("\t{0:.2f}".format(100.0 * CM[i][j] / numpy.sum(CM)), end=' ')
+        print()
 
 
 def normalizeFeatures(features):
@@ -977,17 +977,17 @@ def fileClassification(inputFile, modelName, modelType):
     # Load classifier:
 
     if not os.path.isfile(modelName):
-        print "fileClassification: input modelName not found!"
+        print("fileClassification: input modelName not found!")
         return (-1, -1, -1)
 
     if not os.path.isfile(inputFile):
-        print "fileClassification: wav file not found!"
+        print("fileClassification: wav file not found!")
         return (-1, -1, -1)
 
     if (modelType) == 'svm' or (modelType == 'svm_rbf'):
         [Classifier, MEAN, STD, classNames, mtWin, mtStep, stWin, stStep, computeBEAT] = loadSVModel(modelName)
     elif modelType == 'knn':
-        [Classifier, MEAN, STD, classNames, mtWin, mtStep, stWin, stStep, computeBEAT] = loadKNNModel(modelName)
+        [Classifier, MEAN, STD, classNames, mtWin, mtStep, stWin, stStep, computeBEAT] = load_knn_model(modelName)
     elif modelType == 'randomforest':
         [Classifier, MEAN, STD, classNames, mtWin, mtStep, stWin, stStep, computeBEAT] = loadRandomForestModel(modelName)
     elif modelType == 'gradientboosting':
@@ -1020,7 +1020,7 @@ def fileRegression(inputFile, modelName, modelType):
     # Load classifier:
 
     if not os.path.isfile(inputFile):
-        print "fileClassification: wav file not found!"
+        print("fileClassification: wav file not found!")
         return (-1, -1, -1)
 
     regressionModels = glob.glob(modelName + "_*")
@@ -1038,7 +1038,7 @@ def fileRegression(inputFile, modelName, modelType):
     if modelType == 'svm':        
         [_, _, _, mtWin, mtStep, stWin, stStep, computeBEAT] = loadSVModel(regressionModels[0], True)
     elif modelType == 'knn':
-        [_, _, _, mtWin, mtStep, stWin, stStep, computeBEAT] = loadKNNModel(regressionModels[0], True)
+        [_, _, _, mtWin, mtStep, stWin, stStep, computeBEAT] = load_knn_model(regressionModels[0], True)
 
     [Fs, x] = audioBasicIO.readAudioFile(inputFile)        # read audio file and convert to mono
     x = audioBasicIO.stereo2mono(x)
@@ -1054,12 +1054,12 @@ def fileRegression(inputFile, modelName, modelType):
     R = []
     for ir, r in enumerate(regressionModels):
         if not os.path.isfile(r):
-            print "fileClassification: input modelName not found!"
+            print("fileClassification: input modelName not found!")
             return (-1, -1, -1)
         if modelType == 'svm':
             [Model, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT] = loadSVModel(r, True)
         elif modelType == 'knn':
-            [Model, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT] = loadKNNModel(r, True)
+            [Model, MEAN, STD, mtWin, mtStep, stWin, stStep, computeBEAT] = load_knn_model(r, True)
         curFV = (MidTermFeatures - MEAN) / STD                  # normalization
         R.append(regressionWrapper(Model, modelType, curFV))    # classification
     return R, regressionNames
@@ -1070,7 +1070,7 @@ def lda(data, labels, redDim):
     data -= data.mean(axis=0)
     nData = numpy.shape(data)[0]
     nDim = numpy.shape(data)[1]
-    print nData, nDim
+    print(nData, nDim)
     Sw = numpy.zeros((nDim, nDim))
     Sb = numpy.zeros((nDim, nDim))
 
