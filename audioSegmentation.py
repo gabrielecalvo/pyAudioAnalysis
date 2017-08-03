@@ -1,23 +1,21 @@
-import numpy
-import sklearn.cluster
-import time
-import scipy
 import os
+import csv
+import pickle
+import glob
+
+import numpy as np
+import scipy
+from scipy.spatial import distance
+import matplotlib.pyplot as plt
+
+import sklearn
+import sklearn.cluster
+import sklearn.discriminant_analysis
+import hmmlearn.hmm
+
 import audioFeatureExtraction as aF
 import audioTrainTest as aT
 import audioBasicIO
-import matplotlib.pyplot as plt
-from scipy.spatial import distance
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import sklearn.discriminant_analysis
-import csv
-import os.path
-import sklearn
-import sklearn.cluster
-import hmmlearn.hmm
-import pickle
-import glob
 
 DATA_PATH = r'C:\Users\sendh\Documents\Python Projects\GitHub\workplace_minutes\diarization_gateway\pyAudioAnalysis\data'
 
@@ -32,10 +30,10 @@ def smoothMovingAvg(inputSignal, windowLen=11):
         raise ValueError("Input vector needs to be bigger than window size.")
     if windowLen < 3:
         return inputSignal
-    s = numpy.r_[2 * inputSignal[0] - inputSignal[windowLen - 1::-1], inputSignal, 2 * inputSignal[-1] - inputSignal[
+    s = np.r_[2 * inputSignal[0] - inputSignal[windowLen - 1::-1], inputSignal, 2 * inputSignal[-1] - inputSignal[
                                                                                                          -1:-windowLen:-1]]
-    w = numpy.ones(windowLen, 'd')
-    y = numpy.convolve(w / w.sum(), s, mode='same')
+    w = np.ones(windowLen, 'd')
+    y = np.convolve(w / w.sum(), s, mode='same')
     return y[windowLen:-windowLen + 1]
 
 
@@ -88,7 +86,7 @@ def flags2segs(Flags, window):
                 curVal = Flags[curFlag]
                 segsList.append((curFlag * window))
                 classes.append(preVal)
-    segs = numpy.zeros((len(segsList), 2))
+    segs = np.zeros((len(segsList), 2))
 
     for i in range(len(segsList)):
         if i > 0:
@@ -118,7 +116,7 @@ def segs2flags(segStart, segEnd, segLabel, winSize):
                 break
         flags.append(classNames.index(segLabel[i]))
         curPos += winSize
-    return numpy.array(flags), classNames
+    return np.array(flags), classNames
 
 
 def computePreRec(CM, classNames):
@@ -133,8 +131,8 @@ def computePreRec(CM, classNames):
     Recall = []
     F1 = []
     for i, c in enumerate(classNames):
-        Precision.append(CM[i, i] / numpy.sum(CM[:, i]))
-        Recall.append(CM[i, i] / numpy.sum(CM[i, :]))
+        Precision.append(CM[i, i] / np.sum(CM[:, i]))
+        Recall.append(CM[i, i] / np.sum(CM[i, :]))
         F1.append(2 * Precision[-1] * Recall[-1] / (Precision[-1] + Recall[-1]))
     return Recall, Precision, F1
 
@@ -162,7 +160,7 @@ def readSegmentGT(gtFile):
                 segEnd.append(float(row[1]))
                 segLabel.append((row[2]))
 
-    return numpy.array(segStart), numpy.array(segEnd), segLabel
+    return np.array(segStart), np.array(segEnd), segLabel
 
 
 def plotSegmentationResults(flagsInd, flagsIndGT, classNames, mtStep, ONLY_EVALUATE=False):
@@ -174,15 +172,15 @@ def plotSegmentationResults(flagsInd, flagsIndGT, classNames, mtStep, ONLY_EVALU
     (segs, classes) = flags2segs(flags, mtStep)
     minLength = min(flagsInd.shape[0], flagsIndGT.shape[0])
     if minLength > 0:
-        accuracy = numpy.sum(flagsInd[0:minLength] == flagsIndGT[0:minLength]) / float(minLength)
+        accuracy = np.sum(flagsInd[0:minLength] == flagsIndGT[0:minLength]) / float(minLength)
     else:
         accuracy = -1
 
     if not ONLY_EVALUATE:
         Duration = segs[-1, 1]
-        SPercentages = numpy.zeros((len(classNames), 1))
-        Percentages = numpy.zeros((len(classNames), 1))
-        AvDurations = numpy.zeros((len(classNames), 1))
+        SPercentages = np.zeros((len(classNames), 1))
+        Percentages = np.zeros((len(classNames), 1))
+        AvDurations = np.zeros((len(classNames), 1))
 
         for iSeg in range(segs.shape[0]):
             SPercentages[classNames.index(classes[iSeg])] += (segs[iSeg, 1] - segs[iSeg, 0])
@@ -203,12 +201,12 @@ def plotSegmentationResults(flagsInd, flagsIndGT, classNames, mtStep, ONLY_EVALU
 
         fig = plt.figure()
         ax1 = fig.add_subplot(211)
-        ax1.set_yticks(numpy.array(list(range(len(classNames)))))
+        ax1.set_yticks(np.array(list(range(len(classNames)))))
         ax1.axis((0, Duration, -1, len(classNames)))
         ax1.set_yticklabels(classNames)
-        ax1.plot(numpy.array(list(range(len(flagsInd)))) * mtStep + mtStep / 2.0, flagsInd)
+        ax1.plot(np.array(list(range(len(flagsInd)))) * mtStep + mtStep / 2.0, flagsInd)
         if flagsIndGT.shape[0] > 0:
-            ax1.plot(numpy.array(list(range(len(flagsIndGT)))) * mtStep + mtStep / 2.0, flagsIndGT + 0.05, '--r')
+            ax1.plot(np.array(list(range(len(flagsIndGT)))) * mtStep + mtStep / 2.0, flagsIndGT + 0.05, '--r')
         plt.xlabel("time (seconds)")
         if accuracy >= 0:
             plt.title('Accuracy = {0:.1f}%'.format(100.0 * accuracy))
@@ -216,16 +214,16 @@ def plotSegmentationResults(flagsInd, flagsIndGT, classNames, mtStep, ONLY_EVALU
         ax2 = fig.add_subplot(223)
         plt.title("Classes percentage durations")
         ax2.axis((0, len(classNames) + 1, 0, 100))
-        ax2.set_xticks(numpy.array(list(range(len(classNames) + 1))))
+        ax2.set_xticks(np.array(list(range(len(classNames) + 1))))
         ax2.set_xticklabels([" "] + classNames)
-        ax2.bar(numpy.array(list(range(len(classNames)))) + 0.5, Percentages)
+        ax2.bar(np.array(list(range(len(classNames)))) + 0.5, Percentages)
 
         ax3 = fig.add_subplot(224)
         plt.title("Segment average duration per class")
         ax3.axis((0, len(classNames) + 1, 0, AvDurations.max()))
-        ax3.set_xticks(numpy.array(list(range(len(classNames) + 1))))
+        ax3.set_xticks(np.array(list(range(len(classNames) + 1))))
         ax3.set_xticklabels([" "] + classNames)
-        ax3.bar(numpy.array(list(range(len(classNames)))) + 0.5, AvDurations)
+        ax3.bar(np.array(list(range(len(classNames)))) + 0.5, AvDurations)
         fig.tight_layout()
         plt.show()
     return accuracy
@@ -236,30 +234,30 @@ def evaluateSpeakerDiarization(flags, flagsGT):
     flags = flags[0:minLength]
     flagsGT = flagsGT[0:minLength]
 
-    uFlags = numpy.unique(flags)
-    uFlagsGT = numpy.unique(flagsGT)
+    uFlags = np.unique(flags)
+    uFlagsGT = np.unique(flagsGT)
 
     # compute contigency table:
-    cMatrix = numpy.zeros((uFlags.shape[0], uFlagsGT.shape[0]))
+    cMatrix = np.zeros((uFlags.shape[0], uFlagsGT.shape[0]))
     for i in range(minLength):
-        cMatrix[int(numpy.nonzero(uFlags == flags[i])[0]), int(numpy.nonzero(uFlagsGT == flagsGT[i])[0])] += 1.0
+        cMatrix[int(np.nonzero(uFlags == flags[i])[0]), int(np.nonzero(uFlagsGT == flagsGT[i])[0])] += 1.0
 
     Nc, Ns = cMatrix.shape
-    N_s = numpy.sum(cMatrix, axis=0)
-    N_c = numpy.sum(cMatrix, axis=1)
-    N = numpy.sum(cMatrix)
+    N_s = np.sum(cMatrix, axis=0)
+    N_c = np.sum(cMatrix, axis=1)
+    N = np.sum(cMatrix)
 
-    purityCluster = numpy.zeros((Nc,))
-    puritySpeaker = numpy.zeros((Ns,))
+    purityCluster = np.zeros((Nc,))
+    puritySpeaker = np.zeros((Ns,))
     # compute cluster purity:
     for i in range(Nc):
-        purityCluster[i] = numpy.max((cMatrix[i, :])) / (N_c[i])
+        purityCluster[i] = np.max((cMatrix[i, :])) / (N_c[i])
 
     for j in range(Ns):
-        puritySpeaker[j] = numpy.max((cMatrix[:, j])) / (N_s[j])
+        puritySpeaker[j] = np.max((cMatrix[:, j])) / (N_s[j])
 
-    purityClusterMean = numpy.sum(purityCluster * N_c) / N
-    puritySpeakerMean = numpy.sum(puritySpeaker * N_s) / N
+    purityClusterMean = np.sum(purityCluster * N_c) / N
+    puritySpeakerMean = np.sum(puritySpeaker * N_s) / N
 
     return purityClusterMean, puritySpeakerMean
 
@@ -278,7 +276,7 @@ def trainHMM_computeStatistics(features, labels):
      - means:    means matrix (numOfDimensions x 1)
      - cov:        deviation matrix (numOfDimensions x 1)
     '''
-    uLabels = numpy.unique(labels)
+    uLabels = np.unique(labels)
     nComps = len(uLabels)
 
     nFeatures = features.shape[0]
@@ -288,26 +286,26 @@ def trainHMM_computeStatistics(features, labels):
         labels = labels[0:features.shape[1]]
 
     # compute prior probabilities:
-    startprob = numpy.zeros((nComps,))
+    startprob = np.zeros((nComps,))
     for i, u in enumerate(uLabels):
-        startprob[i] = numpy.count_nonzero(labels == u)
+        startprob[i] = np.count_nonzero(labels == u)
     startprob = startprob / startprob.sum()  # normalize prior probabilities
 
     # compute transition matrix:
-    transmat = numpy.zeros((nComps, nComps))
+    transmat = np.zeros((nComps, nComps))
     for i in range(labels.shape[0] - 1):
         transmat[int(labels[i]), int(labels[i + 1])] += 1
     for i in range(nComps):  # normalize rows of transition matrix:
         transmat[i, :] /= transmat[i, :].sum()
 
-    means = numpy.zeros((nComps, nFeatures))
+    means = np.zeros((nComps, nFeatures))
     for i in range(nComps):
-        means[i, :] = numpy.matrix(features[:, numpy.nonzero(labels == uLabels[i])[0]].mean(axis=1))
+        means[i, :] = np.matrix(features[:, np.nonzero(labels == uLabels[i])[0]].mean(axis=1))
 
-    cov = numpy.zeros((nComps, nFeatures))
+    cov = np.zeros((nComps, nFeatures))
     for i in range(nComps):
-        # cov[i,:,:] = numpy.cov(features[:,numpy.nonzero(labels==uLabels[i])[0]])  # use this lines if HMM using full gaussian distributions are to be used!
-        cov[i, :] = numpy.std(features[:, numpy.nonzero(labels == uLabels[i])[0]], axis=1)
+        # cov[i,:,:] = np.cov(features[:,np.nonzero(labels==uLabels[i])[0]])  # use this lines if HMM using full gaussian distributions are to be used!
+        cov[i, :] = np.std(features[:, np.nonzero(labels == uLabels[i])[0]], axis=1)
 
     return startprob, transmat, means, cov
 
@@ -371,7 +369,7 @@ def trainHMM_fromDir(dirPath, hmmModelName, mtWin, mtStep):
     After training, hmm, classNames, along with the mtWin and mtStep values are stored in the hmmModelName file
     '''
 
-    flagsAll = numpy.array([])
+    flagsAll = np.array([])
     classesAll = []
     for i, f in enumerate(glob.glob(dirPath + os.sep + '*.wav')):  # for each WAV file
         wavFile = f
@@ -397,12 +395,12 @@ def trainHMM_fromDir(dirPath, hmmModelName, mtWin, mtStep):
         for j, fl in enumerate(flags):  # append features and labels
             flagsNew.append(classesAll.index(classNames[flags[j]]))
 
-        flagsAll = numpy.append(flagsAll, numpy.array(flagsNew))
+        flagsAll = np.append(flagsAll, np.array(flagsNew))
 
         if i == 0:
             Fall = F
         else:
-            Fall = numpy.concatenate((Fall, F), axis=1)
+            Fall = np.concatenate((Fall, F), axis=1)
     startprob, transmat, means, cov = trainHMM_computeStatistics(Fall, flagsAll)  # compute HMM statistics
     hmm = hmmlearn.hmm.GaussianHMM(startprob.shape[0], "diag")  # train HMM
     hmm.startprob_ = startprob
@@ -455,12 +453,12 @@ def hmmSegmentation(wavFileName, hmmModelName, PLOT=False, gtFileName=""):
                 flagsGTNew.append(classesAll.index(classNamesGT[flagsGT[j]]))
             else:
                 flagsGTNew.append(-1)
-        CM = numpy.zeros((len(classNamesGT), len(classNamesGT)))
-        flagsIndGT = numpy.array(flagsGTNew)
+        CM = np.zeros((len(classNamesGT), len(classNamesGT)))
+        flagsIndGT = np.array(flagsGTNew)
         for i in range(min(flagsInd.shape[0], flagsIndGT.shape[0])):
             CM[int(flagsIndGT[i]), int(flagsInd[i])] += 1
     else:
-        flagsIndGT = numpy.array([])
+        flagsIndGT = np.array([])
     acc = plotSegmentationResults(flagsInd, flagsIndGT, classesAll, mtStep, not PLOT)
     if acc >= 0:
         print("Overall Accuracy: {0:.2f}".format(acc))
@@ -520,8 +518,8 @@ def mtFileClassification(inputFile, modelName, modelType, plotResults=False, gtF
         [Result, P] = aT.classifierWrapper(Classifier, modelType, curFV)  # classify vector
         flagsInd.append(Result)
         flags.append(classNames[int(Result)])  # update class label matrix
-        Ps.append(numpy.max(P))  # update probability matrix
-    flagsInd = numpy.array(flagsInd)
+        Ps.append(np.max(P))  # update probability matrix
+    flagsInd = np.array(flagsInd)
 
     # 1-window smoothing
     for i in range(1, len(flagsInd) - 1):
@@ -540,13 +538,13 @@ def mtFileClassification(inputFile, modelName, modelType, plotResults=False, gtF
                 flagsIndGT.append(classNames.index(classNamesGT[flagsGT[j]]))
             else:
                 flagsIndGT.append(-1)
-        flagsIndGT = numpy.array(flagsIndGT)
-        CM = numpy.zeros((len(classNamesGT), len(classNamesGT)))
+        flagsIndGT = np.array(flagsIndGT)
+        CM = np.zeros((len(classNamesGT), len(classNamesGT)))
         for i in range(min(flagsInd.shape[0], flagsIndGT.shape[0])):
             CM[int(flagsIndGT[i]), int(flagsInd[i])] += 1
     else:
         CM = []
-        flagsIndGT = numpy.array([])
+        flagsIndGT = np.array([])
     acc = plotSegmentationResults(flagsInd, flagsIndGT, classNames, mtStep, not plotResults)
     if acc >= 0:
         print("Overall Accuracy: {0:.3f}".format(acc))
@@ -556,7 +554,7 @@ def mtFileClassification(inputFile, modelName, modelType, plotResults=False, gtF
 
 
 def evaluateSegmentationClassificationDir(dirName, modelName, methodName):
-    flagsAll = numpy.array([])
+    flagsAll = np.array([])
     classesAll = []
     accuracys = []
 
@@ -571,7 +569,7 @@ def evaluateSegmentationClassificationDir(dirName, modelName, methodName):
             flagsInd, classNames, acc, CMt = hmmSegmentation(wavFile, modelName, False, gtFile)
         if acc > -1:
             if i == 0:
-                CM = numpy.copy(CMt)
+                CM = np.copy(CMt)
             else:
                 CM = CM + CMt
             accuracys.append(acc)
@@ -579,17 +577,17 @@ def evaluateSegmentationClassificationDir(dirName, modelName, methodName):
             print(CM)
             [Rec, Pre, F1] = computePreRec(CMt, classNames)
 
-    CM = CM / numpy.sum(CM)
+    CM = CM / np.sum(CM)
     [Rec, Pre, F1] = computePreRec(CM, classNames)
 
     print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
-    print("Average Accuracy: {0:.1f}".format(100.0 * numpy.array(accuracys).mean()))
-    print("Average Recall: {0:.1f}".format(100.0 * numpy.array(Rec).mean()))
-    print("Average Precision: {0:.1f}".format(100.0 * numpy.array(Pre).mean()))
-    print("Average F1: {0:.1f}".format(100.0 * numpy.array(F1).mean()))
-    print("Median Accuracy: {0:.1f}".format(100.0 * numpy.median(numpy.array(accuracys))))
-    print("Min Accuracy: {0:.1f}".format(100.0 * numpy.array(accuracys).min()))
-    print("Max Accuracy: {0:.1f}".format(100.0 * numpy.array(accuracys).max()))
+    print("Average Accuracy: {0:.1f}".format(100.0 * np.array(accuracys).mean()))
+    print("Average Recall: {0:.1f}".format(100.0 * np.array(Rec).mean()))
+    print("Average Precision: {0:.1f}".format(100.0 * np.array(Pre).mean()))
+    print("Average F1: {0:.1f}".format(100.0 * np.array(F1).mean()))
+    print("Median Accuracy: {0:.1f}".format(100.0 * np.median(np.array(accuracys))))
+    print("Min Accuracy: {0:.1f}".format(100.0 * np.array(accuracys).min()))
+    print("Max Accuracy: {0:.1f}".format(100.0 * np.array(accuracys).max()))
 
 
 def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=False):
@@ -618,12 +616,12 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
 
     # Step 2: train binary SVM classifier of low vs high energy frames
     EnergySt = ShortTermFeatures[1, :]  # keep only the energy short-term sequence (2nd feature)
-    E = numpy.sort(EnergySt)  # sort the energy feature values:
+    E = np.sort(EnergySt)  # sort the energy feature values:
     L1 = int(len(E) / 10)  # number of 10% of the total short-term windows
-    T1 = numpy.mean(E[0:L1]) + 0.000000000000001  # compute "lower" 10% energy threshold
-    T2 = numpy.mean(E[-L1:-1]) + 0.000000000000001  # compute "higher" 10% energy threshold
-    Class1 = ShortTermFeatures[:, numpy.where(EnergySt <= T1)[0]]  # get all features that correspond to low energy
-    Class2 = ShortTermFeatures[:, numpy.where(EnergySt >= T2)[0]]  # get all features that correspond to high energy
+    T1 = np.mean(E[0:L1]) + 0.000000000000001  # compute "lower" 10% energy threshold
+    T2 = np.mean(E[-L1:-1]) + 0.000000000000001  # compute "higher" 10% energy threshold
+    Class1 = ShortTermFeatures[:, np.where(EnergySt <= T1)[0]]  # get all features that correspond to low energy
+    Class2 = ShortTermFeatures[:, np.where(EnergySt >= T2)[0]]  # get all features that correspond to high energy
     featuresSS = [Class1.T, Class2.T]  # form the binary classification task and ...
 
     [featuresNormSS, MEANSS, STDSS] = aT.normalizeFeatures(featuresSS)  # normalize and ...
@@ -635,16 +633,16 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
         curFV = (ShortTermFeatures[:, i] - MEANSS) / STDSS  # normalize feature vector
         ProbOnset.append(
             SVM.predict_proba(curFV.reshape(1, -1))[0][1])  # get SVM probability (that it belongs to the ONSET class)
-    ProbOnset = numpy.array(ProbOnset)
+    ProbOnset = np.array(ProbOnset)
     ProbOnset = smoothMovingAvg(ProbOnset, smoothWindow / stStep)  # smooth probability
 
     # Step 4A: detect onset frame indices:
-    ProbOnsetSorted = numpy.sort(
+    ProbOnsetSorted = np.sort(
         ProbOnset)  # find probability Threshold as a weighted average of top 10% and lower 10% of the values
     Nt = ProbOnsetSorted.shape[0] / 10
-    T = (numpy.mean((1 - Weight) * ProbOnsetSorted[0:Nt]) + Weight * numpy.mean(ProbOnsetSorted[-Nt::]))
+    T = (np.mean((1 - Weight) * ProbOnsetSorted[0:Nt]) + Weight * np.mean(ProbOnsetSorted[-Nt::]))
 
-    MaxIdx = numpy.where(ProbOnset > T)[0]  # get the indices of the frames that satisfy the thresholding
+    MaxIdx = np.where(ProbOnset > T)[0]  # get the indices of the frames that satisfy the thresholding
     i = 0
     timeClusters = []
     segmentLimits = []
@@ -672,7 +670,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
     segmentLimits = segmentLimits2
 
     if plot:
-        timeX = numpy.arange(0, x.shape[0] / float(Fs), 1.0 / Fs)
+        timeX = np.arange(0, x.shape[0] / float(Fs), 1.0 / Fs)
 
         plt.subplot(2, 1, 1)
         plt.plot(timeX, x)
@@ -680,7 +678,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
             plt.axvline(x=s[0])
             plt.axvline(x=s[1])
         plt.subplot(2, 1, 2)
-        plt.plot(numpy.arange(0, ProbOnset.shape[0] * stStep, stStep), ProbOnset)
+        plt.plot(np.arange(0, ProbOnset.shape[0] * stStep, stStep), ProbOnset)
         plt.title('Signal')
         for s in segmentLimits:
             plt.axvline(x=s[0])
@@ -693,6 +691,7 @@ def silenceRemoval(x, Fs, stWin, stStep, smoothWindow=0.5, Weight=0.5, plot=Fals
 
 def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, st_win=0.05, lda_dim=35, plot_=False):
     """
+    Diarize the specified audio file
 
     :param filepath:        the path to the audio file to be analyzed
     :param num_of_speakers: (optional) the number of speakers (clusters) in the recording (0 for unknown)
@@ -704,19 +703,20 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
     :return: array of flags for each window step
     """
 
-    [Fs, x] = audioBasicIO.readAudioFile(filepath)
-    x = audioBasicIO.stereo2mono(x)
-    duration = len(x) / Fs
+    [framerate, data] = audioBasicIO.readAudioFile(filepath)
+    data = audioBasicIO.stereo2mono(data)
+    duration = len(data) / framerate
 
     Classifier1, MEAN1, STD1, classNames1, mtWin1, mtStep1, stWin1, stStep1, computeBEAT1 = aT.load_knn_model(
         os.path.join(DATA_PATH, "knnSpeakerAll"))
     Classifier2, MEAN2, STD2, classNames2, mtWin2, mtStep2, stWin2, stStep2, computeBEAT2 = aT.load_knn_model(
         os.path.join(DATA_PATH, "knnSpeakerFemaleMale"))
 
-    [MidTermFeatures, ShortTermFeatures] = aF.mtFeatureExtraction(x, Fs, mt_size * Fs, mt_step * Fs, round(Fs * st_win),
-                                                                  round(Fs * st_win * 0.5))
+    [MidTermFeatures, ShortTermFeatures] = aF.mtFeatureExtraction(data, framerate, mt_size * framerate,
+                                                                  mt_step * framerate, round(framerate * st_win),
+                                                                  round(framerate * st_win * 0.5))
 
-    MidTermFeatures2 = numpy.zeros(
+    MidTermFeatures2 = np.zeros(
         (MidTermFeatures.shape[0] + len(classNames1) + len(classNames2), MidTermFeatures.shape[1]))
 
     for i in range(MidTermFeatures.shape[1]):
@@ -745,7 +745,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
     # iFeaturesSelect = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53, 68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98, 99,100];     # SET 2C
 
     # iFeaturesSelect = range(100);                                                                                                    # SET 3
-    # MidTermFeatures += numpy.random.rand(MidTermFeatures.shape[0], MidTermFeatures.shape[1]) * 0.000000010
+    # MidTermFeatures += np.random.rand(MidTermFeatures.shape[0], MidTermFeatures.shape[1]) * 0.000000010
 
     MidTermFeatures = MidTermFeatures[iFeaturesSelect, :]
 
@@ -754,15 +754,15 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
     numOfWindows = MidTermFeatures.shape[1]
 
     # remove outliers:
-    DistancesAll = numpy.sum(distance.squareform(distance.pdist(MidTermFeaturesNorm.T)), axis=0)
-    MDistancesAll = numpy.mean(DistancesAll)
-    iNonOutLiers = numpy.nonzero(DistancesAll < 1.2 * MDistancesAll)[0]
+    DistancesAll = np.sum(distance.squareform(distance.pdist(MidTermFeaturesNorm.T)), axis=0)
+    MDistancesAll = np.mean(DistancesAll)
+    iNonOutLiers = np.nonzero(DistancesAll < 1.2 * MDistancesAll)[0]
 
     # TODO: Combine energy threshold for outlier removal:
-    # EnergyMin = numpy.min(MidTermFeatures[1,:])
-    # EnergyMean = numpy.mean(MidTermFeatures[1,:])
+    # EnergyMin = np.min(MidTermFeatures[1,:])
+    # EnergyMean = np.mean(MidTermFeatures[1,:])
     # Thres = (1.5*EnergyMin + 0.5*EnergyMean) / 2.0
-    # iNonOutLiers = numpy.nonzero(MidTermFeatures[1,:] > Thres)[0]
+    # iNonOutLiers = np.nonzero(MidTermFeatures[1,:] > Thres)[0]
     # print iNonOutLiers
 
     perOutLier = (100.0 * (numOfWindows - iNonOutLiers.shape[0])) / numOfWindows
@@ -771,7 +771,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
 
     # LDA dimensionality reduction:
     if lda_dim > 0:
-        # [mtFeaturesToReduce, _] = aF.mtFeatureExtraction(x, Fs, mtSize * Fs, stWin * Fs, round(Fs*stWin), round(Fs*stWin))
+        # [mtFeaturesToReduce, _] = aF.mtFeatureExtraction(data, framerate, mtSize * framerate, stWin * framerate, round(framerate*stWin), round(framerate*stWin))
         # extract mid-term features with minimum step:
         mtWinRatio = int(round(mt_size / st_win))
         mtStepRatio = int(round(st_win / st_win))
@@ -791,11 +791,11 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
                 if N2 > N:
                     N2 = N
                 curStFeatures = ShortTermFeatures[i][N1:N2]
-                mtFeaturesToReduce[i].append(numpy.mean(curStFeatures))
-                mtFeaturesToReduce[i + numOfFeatures].append(numpy.std(curStFeatures))
+                mtFeaturesToReduce[i].append(np.mean(curStFeatures))
+                mtFeaturesToReduce[i + numOfFeatures].append(np.std(curStFeatures))
                 curPos += mtStepRatio
-        mtFeaturesToReduce = numpy.array(mtFeaturesToReduce)
-        mtFeaturesToReduce2 = numpy.zeros(
+        mtFeaturesToReduce = np.array(mtFeaturesToReduce)
+        mtFeaturesToReduce2 = np.zeros(
             (mtFeaturesToReduce.shape[0] + len(classNames1) + len(classNames2), mtFeaturesToReduce.shape[1]))
         for i in range(mtFeaturesToReduce.shape[1]):
             curF1 = (mtFeaturesToReduce[:, i] - MEAN1) / STD1
@@ -808,14 +808,14 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
             mtFeaturesToReduce2[mtFeaturesToReduce.shape[0] + len(classNames1)::, i] = P2 + 0.0001
         mtFeaturesToReduce = mtFeaturesToReduce2
         mtFeaturesToReduce = mtFeaturesToReduce[iFeaturesSelect, :]
-        # mtFeaturesToReduce += numpy.random.rand(mtFeaturesToReduce.shape[0], mtFeaturesToReduce.shape[1]) * 0.0000010
+        # mtFeaturesToReduce += np.random.rand(mtFeaturesToReduce.shape[0], mtFeaturesToReduce.shape[1]) * 0.0000010
         (mtFeaturesToReduce, MEAN, STD) = aT.normalizeFeatures([mtFeaturesToReduce.T])
         mtFeaturesToReduce = mtFeaturesToReduce[0].T
-        # DistancesAll = numpy.sum(distance.squareform(distance.pdist(mtFeaturesToReduce.T)), axis=0)
-        # MDistancesAll = numpy.mean(DistancesAll)
-        # iNonOutLiers2 = numpy.nonzero(DistancesAll < 3.0*MDistancesAll)[0]
+        # DistancesAll = np.sum(distance.squareform(distance.pdist(mtFeaturesToReduce.T)), axis=0)
+        # MDistancesAll = np.mean(DistancesAll)
+        # iNonOutLiers2 = np.nonzero(DistancesAll < 3.0*MDistancesAll)[0]
         # mtFeaturesToReduce = mtFeaturesToReduce[:, iNonOutLiers2]
-        Labels = numpy.zeros((mtFeaturesToReduce.shape[1],))
+        Labels = np.zeros((mtFeaturesToReduce.shape[1],))
         LDAstep = 1.0
         LDAstepRatio = LDAstep / st_win
         # print LDAstep, LDAstepRatio
@@ -845,7 +845,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
         silA = []
         silB = []
         for c in range(iSpeakers):  # for each speaker (i.e. for each extracted cluster)
-            clusterPerCent = numpy.nonzero(cls == c)[0].shape[0] / float(len(cls))
+            clusterPerCent = np.nonzero(cls == c)[0].shape[0] / float(len(cls))
             if clusterPerCent < 0.020:
                 silA.append(0.0)
                 silB.append(0.0)
@@ -853,33 +853,33 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
                 MidTermFeaturesNormTemp = MidTermFeaturesNorm[:, cls == c]  # get subset of feature vectors
                 Yt = distance.pdist(
                     MidTermFeaturesNormTemp.T)  # compute average distance between samples that belong to the cluster (a values)
-                silA.append(numpy.mean(Yt) * clusterPerCent)
+                silA.append(np.mean(Yt) * clusterPerCent)
                 silBs = []
                 for c2 in range(iSpeakers):  # compute distances from samples of other clusters
                     if c2 != c:
-                        clusterPerCent2 = numpy.nonzero(cls == c2)[0].shape[0] / float(len(cls))
+                        clusterPerCent2 = np.nonzero(cls == c2)[0].shape[0] / float(len(cls))
                         MidTermFeaturesNormTemp2 = MidTermFeaturesNorm[:, cls == c2]
                         Yt = distance.cdist(MidTermFeaturesNormTemp.T, MidTermFeaturesNormTemp2.T)
-                        silBs.append(numpy.mean(Yt) * (clusterPerCent + clusterPerCent2) / 2.0)
-                silBs = numpy.array(silBs)
+                        silBs.append(np.mean(Yt) * (clusterPerCent + clusterPerCent2) / 2.0)
+                silBs = np.array(silBs)
                 silB.append(min(silBs))  # ... and keep the minimum value (i.e. the distance from the "nearest" cluster)
-        silA = numpy.array(silA)
-        silB = numpy.array(silB)
+        silA = np.array(silA)
+        silB = np.array(silB)
         sil = []
         for c in range(iSpeakers):  # for each cluster (speaker)
             sil.append((silB[c] - silA[c]) / (max(silB[c], silA[c]) + 0.00001))  # compute silhouette
 
-        silAll.append(numpy.mean(sil))  # keep the AVERAGE SILLOUETTE
+        silAll.append(np.mean(sil))  # keep the AVERAGE SILLOUETTE
 
-    # silAll = silAll * (1.0/(numpy.power(numpy.array(sRange),0.5)))
-    imax = numpy.argmax(silAll)  # position of the maximum sillouette value
+    # silAll = silAll * (1.0/(np.power(np.array(sRange),0.5)))
+    imax = np.argmax(silAll)  # position of the maximum sillouette value
     nSpeakersFinal = sRange[imax]  # optimal number of clusters
 
     # generate the final set of cluster labels
     # (important: need to retrieve the outlier windows: this is achieved by giving them the value of their nearest non-outlier window)
-    cls = numpy.zeros((numOfWindows,))
+    cls = np.zeros((numOfWindows,))
     for i in range(numOfWindows):
-        j = numpy.argmin(numpy.abs(i - iNonOutLiers))
+        j = np.argmin(np.abs(i - iNonOutLiers))
         cls[i] = clsAll[imax][j]
 
     # Post-process method 1: hmm smoothing
@@ -911,14 +911,16 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
             ax1 = fig.add_subplot(111)
         else:
             ax1 = fig.add_subplot(211)
-        ax1.set_yticks(numpy.array(list(range(len(classNames)))))
+        ax1.set_yticks(np.arange(len(classNames)))
         ax1.axis((0, duration, -1, len(classNames)))
         ax1.set_yticklabels(classNames)
-        ax1.plot(numpy.array(list(range(len(cls)))) * mt_step + mt_step / 2.0, cls)
+        seconds = np.arange(len(cls)) * mt_step + mt_step / 2
+        ax1.plot(seconds, cls)
 
     if os.path.isfile(gtFile):
         if plot_:
-            ax1.plot(numpy.array(list(range(len(flagsGT)))) * mt_step + mt_step / 2.0, flagsGT, 'r')
+            seconds = np.arange(len(flagsGT)) * mt_step + mt_step / 2
+            ax1.plot(seconds, flagsGT, 'r')
         purityClusterMean, puritySpeakerMean = evaluateSpeakerDiarization(cls, flagsGT)
         print("{0:.1f}\t{1:.1f}".format(100 * purityClusterMean, 100 * puritySpeakerMean))
         if plot_:
@@ -963,7 +965,7 @@ def speakerDiarizationEvaluateScript(folderName, LDAs):
     for l in LDAs:
         print("LDA = {0:d}".format(l))
         for i, wavFile in enumerate(wavFilesList):
-            speakerDiarization(wavFile, N[i], 2.0, 0.2, 0.05, l, PLOT=False)
+            speaker_diarization(wavFile, N[i], 2.0, 0.2, 0.05, l, plot_=False)
         print()
 
 
@@ -1010,11 +1012,11 @@ def musicThumbnailing(x, Fs, shortTermSize=1.0, shortTermStep=0.5, thumbnailSize
 
     # moving filter:
     M = int(round(thumbnailSize / shortTermStep))
-    B = numpy.eye(M, M)
+    B = np.eye(M, M)
     S = scipy.signal.convolve2d(S, B, 'valid')
 
     # post-processing (remove main diagonal elements)
-    MIN = numpy.min(S)
+    MIN = np.min(S)
     for i in range(S.shape[0]):
         for j in range(S.shape[1]):
             if abs(i - j) < 5.0 / shortTermStep or i > j:
@@ -1026,8 +1028,8 @@ def musicThumbnailing(x, Fs, shortTermSize=1.0, shortTermStep=0.5, thumbnailSize
     S[int(Limit2 * S.shape[0])::, :] = MIN
     S[:, int(Limit2 * S.shape[0])::] = MIN
 
-    maxVal = numpy.max(S)
-    [I, J] = numpy.unravel_index(S.argmax(), S.shape)
+    maxVal = np.max(S)
+    [I, J] = np.unravel_index(S.argmax(), S.shape)
     # plt.imshow(S)
     # plt.show()
     # expand:
