@@ -1,6 +1,8 @@
-from audioSegmentation import speaker_diarization
 import os
+
 import numpy
+
+from pyaudioanalysis.audioSegmentation import speaker_diarization
 
 numpy.random.seed(123)  # for reproducibility
 ROOT_FLD = os.path.dirname(os.path.dirname(__file__))

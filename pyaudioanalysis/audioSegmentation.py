@@ -1,21 +1,20 @@
-import os
 import csv
-import pickle
 import glob
+import os
+import pickle
 
+import audioBasicIO
+import audioFeatureExtraction as aF
+import hmmlearn.hmm
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from scipy.spatial import distance
-import matplotlib.pyplot as plt
-
 import sklearn
 import sklearn.cluster
 import sklearn.discriminant_analysis
-import hmmlearn.hmm
+from scipy.spatial import distance
 
-import audioFeatureExtraction as aF
-import audioTrainTest as aT
-import audioBasicIO
+from pyaudioanalysis import audioTrainTest as aT
 
 DATA_PATH = r'C:\Users\sendh\Documents\Python Projects\GitHub\workplace_minutes\diarization_gateway\pyAudioAnalysis\data'
 

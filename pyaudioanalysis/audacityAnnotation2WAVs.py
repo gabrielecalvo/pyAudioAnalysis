@@ -1,6 +1,11 @@
-import glob, os
-import audioBasicIO, sys, csv
+import csv
+import glob
+import os
+import sys
+
 import scipy.io.wavfile as wavfile
+
+from pyaudioanalysis import audioBasicIO
 
 
 def annotation2files(wavFile, csvFile):
