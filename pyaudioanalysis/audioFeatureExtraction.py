@@ -5,7 +5,7 @@ import os
 import sys
 import time
 
-import audioBasicIO
+from . import audioBasicIO
 import matplotlib.pyplot as plt
 import numpy
 from scipy.fftpack import fft

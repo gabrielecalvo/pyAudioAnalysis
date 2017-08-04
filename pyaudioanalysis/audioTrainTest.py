@@ -6,7 +6,7 @@ import pickle
 import signal
 import sys
 
-import audioFeatureExtraction as aF
+from . import audioFeatureExtraction as aF
 import numpy
 import sklearn.decomposition
 import sklearn.ensemble

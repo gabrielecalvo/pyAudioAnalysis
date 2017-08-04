@@ -81,7 +81,7 @@ def readAudioFile(path):
             s = aifc.open(path, 'r')
             nframes = s.getnframes()
             strsig = s.readframes(nframes)
-            data = np.fromstring(strsig, np.short).byteswap()
+            data_extracted = np.fromstring(strsig, np.short).byteswap()
             framerate = s.getframerate()
         elif extension.lower() == '.mp3' or extension.lower() == '.wav' or extension.lower() == '.au':
             try:
@@ -90,17 +90,17 @@ def readAudioFile(path):
                 print("Error: file not found or other I/O error. (DECODING FAILED)")
                 return -1, -1
 
-            # if audiofile.sample_width == 2:
-            #     data = np.fromstring(audiofile._data, np.int16)
-            # elif audiofile.sample_width == 4:
-            #     data = np.fromstring(audiofile._data, np.int32)
-            # else:
-            #     return -1, -1
+            if audiofile.sample_width == 2:
+                data = np.fromstring(audiofile._data, np.int16)
+            elif audiofile.sample_width == 4:
+                data = np.fromstring(audiofile._data, np.int32)
+            else:
+                return -1, -1
             framerate = audiofile.frame_rate
-            data = []
+            data_extracted = []
             for chn in range(audiofile.channels):
-                data.append(data[chn::audiofile.channels])
-            data = np.array(data).T
+                data_extracted.append(data[chn::audiofile.channels])
+            data_extracted = np.array(data_extracted).T
         else:
             print("Error in readAudioFile(): Unknown file type!")
             return -1, -1
@@ -108,18 +108,18 @@ def readAudioFile(path):
         print("Error: file not found or other I/O error.")
         return -1, -1
 
-    if data.ndim == 2:
-        if data.shape[1] == 1:
-            data = data.flatten()
+    if data_extracted.ndim == 2:
+        if data_extracted.shape[1] == 1:
+            data_extracted = data_extracted.flatten()
 
-    return framerate, data
+    return framerate, data_extracted
 
 
 def stereo2mono(x):
     """
     This function converts the input signal (stored in a numpy array) to MONO (if it is STEREO)
     """
-    if not isinstance(x, np.array):
+    if not isinstance(x, np.ndarray):
         raise AttributeError("stereo2mono requires a numpy array as input. {} passed".format(type(x)))
     if x.ndim == 1:
         return x

@@ -3,8 +3,8 @@ import glob
 import os
 import pickle
 
-import audioBasicIO
-import audioFeatureExtraction as aF
+from . import audioBasicIO
+from . import audioFeatureExtraction as aF
 import hmmlearn.hmm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,7 @@ from scipy.spatial import distance
 
 from pyaudioanalysis import audioTrainTest as aT
 
-DATA_PATH = r'C:\Users\sendh\Documents\Python Projects\GitHub\workplace_minutes\diarization_gateway\pyAudioAnalysis\data'
+DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 """ General utility functions """
 
@@ -904,6 +904,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
         [segStart, segEnd, segLabels] = readSegmentGT(gtFile)  # read GT data
         flagsGT, classNamesGT = segs2flags(segStart, segEnd, segLabels, mt_step)  # convert to flags
 
+    seconds = np.arange(len(cls)) * mt_step + mt_step / 2
     if plot_:
         fig = plt.figure()
         if num_of_speakers > 0:
@@ -913,13 +914,12 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
         ax1.set_yticks(np.arange(len(classNames)))
         ax1.axis((0, duration, -1, len(classNames)))
         ax1.set_yticklabels(classNames)
-        seconds = np.arange(len(cls)) * mt_step + mt_step / 2
         ax1.plot(seconds, cls)
 
     if os.path.isfile(gtFile):
         if plot_:
-            seconds = np.arange(len(flagsGT)) * mt_step + mt_step / 2
-            ax1.plot(seconds, flagsGT, 'r')
+            gtFile_seconds = np.arange(len(flagsGT)) * mt_step + mt_step / 2
+            ax1.plot(gtFile_seconds, flagsGT, 'r')
         purityClusterMean, puritySpeakerMean = evaluateSpeakerDiarization(cls, flagsGT)
         print("{0:.1f}\t{1:.1f}".format(100 * purityClusterMean, 100 * puritySpeakerMean))
         if plot_:
@@ -934,7 +934,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
             plt.xlabel("number of clusters")
             plt.ylabel("average clustering's sillouette")
         plt.show()
-    return cls
+    return seconds, cls
 
 
 def speakerDiarizationEvaluateScript(folderName, LDAs):
