@@ -835,29 +835,29 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
     for iSpeakers in sRange:
         k_means = sklearn.cluster.KMeans(n_clusters=iSpeakers)
         k_means.fit(MidTermFeaturesNorm.T)
-        cls = k_means.labels_
+        cluster_labels = k_means.labels_
         means = k_means.cluster_centers_
 
         # Y = distance.squareform(distance.pdist(MidTermFeaturesNorm.T))
-        clsAll.append(cls)
+        clsAll.append(cluster_labels)
         centersAll.append(means)
         silA = []
         silB = []
         for c in range(iSpeakers):  # for each speaker (i.e. for each extracted cluster)
-            clusterPerCent = np.nonzero(cls == c)[0].shape[0] / float(len(cls))
+            clusterPerCent = np.nonzero(cluster_labels == c)[0].shape[0] / float(len(cluster_labels))
             if clusterPerCent < 0.020:
                 silA.append(0.0)
                 silB.append(0.0)
             else:
-                MidTermFeaturesNormTemp = MidTermFeaturesNorm[:, cls == c]  # get subset of feature vectors
+                MidTermFeaturesNormTemp = MidTermFeaturesNorm[:, cluster_labels == c]  # get subset of feature vectors
                 Yt = distance.pdist(
                     MidTermFeaturesNormTemp.T)  # compute average distance between samples that belong to the cluster (a values)
                 silA.append(np.mean(Yt) * clusterPerCent)
                 silBs = []
                 for c2 in range(iSpeakers):  # compute distances from samples of other clusters
                     if c2 != c:
-                        clusterPerCent2 = np.nonzero(cls == c2)[0].shape[0] / float(len(cls))
-                        MidTermFeaturesNormTemp2 = MidTermFeaturesNorm[:, cls == c2]
+                        clusterPerCent2 = np.nonzero(cluster_labels == c2)[0].shape[0] / float(len(cluster_labels))
+                        MidTermFeaturesNormTemp2 = MidTermFeaturesNorm[:, cluster_labels == c2]
                         Yt = distance.cdist(MidTermFeaturesNormTemp.T, MidTermFeaturesNormTemp2.T)
                         silBs.append(np.mean(Yt) * (clusterPerCent + clusterPerCent2) / 2.0)
                 silBs = np.array(silBs)
@@ -876,24 +876,24 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
 
     # generate the final set of cluster labels
     # (important: need to retrieve the outlier windows: this is achieved by giving them the value of their nearest non-outlier window)
-    cls = np.zeros((numOfWindows,))
+    cluster_labels = np.zeros((numOfWindows,))
     for i in range(numOfWindows):
         j = np.argmin(np.abs(i - iNonOutLiers))
-        cls[i] = clsAll[imax][j]
+        cluster_labels[i] = clsAll[imax][j]
 
     # Post-process method 1: hmm smoothing
     for i in range(1):
-        startprob, transmat, means, cov = trainHMM_computeStatistics(MidTermFeaturesNormOr, cls)
+        startprob, transmat, means, cov = trainHMM_computeStatistics(MidTermFeaturesNormOr, cluster_labels)
         hmm = hmmlearn.hmm.GaussianHMM(startprob.shape[0], "diag")  # hmm training
         hmm.startprob_ = startprob
         hmm.transmat_ = transmat
         hmm.means_ = means
         hmm.covars_ = cov
-        cls = hmm.predict(MidTermFeaturesNormOr.T)
+        cluster_labels = hmm.predict(MidTermFeaturesNormOr.T)
 
         # Post-process method 2: median filtering:
-    cls = scipy.signal.medfilt(cls, 13)
-    cls = scipy.signal.medfilt(cls, 11)
+    cluster_labels = scipy.signal.medfilt(cluster_labels, 13)
+    cluster_labels = scipy.signal.medfilt(cluster_labels, 11)
 
     sil = silAll[imax]  # final sillouette
     classNames = ["speaker{0:d}".format(c) for c in range(nSpeakersFinal)]
@@ -904,7 +904,7 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
         [segStart, segEnd, segLabels] = readSegmentGT(gtFile)  # read GT data
         flagsGT, classNamesGT = segs2flags(segStart, segEnd, segLabels, mt_step)  # convert to flags
 
-    seconds = np.arange(len(cls)) * mt_step + mt_step / 2
+    seconds = np.arange(len(cluster_labels)) * mt_step + mt_step / 2
     if plot_:
         fig = plt.figure()
         if num_of_speakers > 0:
@@ -914,14 +914,14 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
         ax1.set_yticks(np.arange(len(classNames)))
         ax1.axis((0, duration, -1, len(classNames)))
         ax1.set_yticklabels(classNames)
-        ax1.plot(seconds, cls)
+        ax1.plot(seconds, cluster_labels)
 
     if os.path.isfile(gtFile):
         if plot_:
             gtFile_seconds = np.arange(len(flagsGT)) * mt_step + mt_step / 2
             ax1.plot(gtFile_seconds, flagsGT, 'r')
-        purityClusterMean, puritySpeakerMean = evaluateSpeakerDiarization(cls, flagsGT)
-        print("{0:.1f}\t{1:.1f}".format(100 * purityClusterMean, 100 * puritySpeakerMean))
+        purityClusterMean, puritySpeakerMean = evaluateSpeakerDiarization(cluster_labels, flagsGT)
+        # print("{0:.1f}\t{1:.1f}".format(100 * purityClusterMean, 100 * puritySpeakerMean))
         if plot_:
             plt.title("Cluster purity: {0:.1f}% - Speaker purity: {1:.1f}%".format(100 * purityClusterMean,
                                                                                    100 * puritySpeakerMean))
@@ -934,7 +934,28 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
             plt.xlabel("number of clusters")
             plt.ylabel("average clustering's sillouette")
         plt.show()
-    return seconds, cls
+
+    speaker_labels = export_speaker_labels(labels=cluster_labels, timestamps=seconds)
+
+    return speaker_labels
+
+
+def export_speaker_labels(labels, timestamps):
+    speaker_labels = []
+    current_speaker = -1
+    for t, speaker in zip(timestamps, labels):
+        t = float(t)            # to de-numpifying to make them jsonable
+        speaker = str(speaker)  # to de-numpifying to make them jsonable
+        if speaker != current_speaker:
+            if speaker_labels:
+                speaker_labels[-1]['to'] = t
+            current_speaker = speaker
+            speaker_labels.append({'speaker': current_speaker, "from": t, "final": False})
+        else:
+            speaker_labels[-1]['to'] = t
+    speaker_labels[-1]['final'] = True
+
+    return {"speaker_labels": speaker_labels}
 
 
 def speakerDiarizationEvaluateScript(folderName, LDAs):

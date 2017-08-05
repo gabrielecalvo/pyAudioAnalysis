@@ -1,6 +1,6 @@
-name: workplace_venv
+name: venv
 dependencies:
-  - python=3.6
+  - python=3
   - numpy
   - matplotlib
   - scipy

@@ -1,36 +1,39 @@
-import sys, os, numpy
+import sys, os, numpy, json
+
 
 def isfloat(x):
-	"""
-	Check if argument is float
-	"""
-	try:
-		a = float(x)
-	except ValueError:
-		return False
-	else:
-		return True
+    """
+    Check if argument is float
+    """
+    try:
+        a = float(x)
+    except ValueError:
+        return False
+    else:
+        return True
+
 
 def isint(x):
-	"""
-	Check if argument is int
-	"""
-	try:
-		a = float(x)
-		b = int(a)
-	except ValueError:
-		return False
-	else:
-		return a == b
+    """
+    Check if argument is int
+    """
+    try:
+        a = float(x)
+        b = int(a)
+    except ValueError:
+        return False
+    else:
+        return a == b
+
 
 def isNum(x):
-	"""
-	Check if string argument is numerical
-	"""
-	return isfloat(x) or isint(x)
+    """
+    Check if string argument is numerical
+    """
+    return isfloat(x) or isint(x)
 
 
-def peakdet(v, delta, x = None):
+def peakdet(v, delta, x=None):
     """
     Converted from MATLAB script at http://billauer.co.il/peakdet.html
     
@@ -57,26 +60,26 @@ def peakdet(v, delta, x = None):
     """
     maxtab = []
     mintab = []
-       
+
     if x is None:
         x = numpy.arange(len(v))
-    
+
     v = numpy.asarray(v)
-    
+
     if len(v) != len(x):
         sys.exit('Input vectors v and x must have same length')
-    
+
     if not numpy.isscalar(delta):
         sys.exit('Input argument delta must be a scalar')
-    
+
     if delta <= 0:
         sys.exit('Input argument delta must be positive')
-    
+
     mn, mx = numpy.Inf, -numpy.Inf
     mnpos, mxpos = numpy.NaN, numpy.NaN
-    
+
     lookformax = True
-    
+
     for i in numpy.arange(len(v)):
         this = v[i]
         if this > mx:
@@ -85,19 +88,23 @@ def peakdet(v, delta, x = None):
         if this < mn:
             mn = this
             mnpos = x[i]
-        
+
         if lookformax:
-            if this < mx-delta:
+            if this < mx - delta:
                 maxtab.append(mxpos)
                 mn = this
                 mnpos = x[i]
                 lookformax = False
         else:
-            if this > mn+delta:
+            if this > mn + delta:
                 mintab.append(mnpos)
                 mx = this
                 mxpos = x[i]
                 lookformax = True
- 
+
     return numpy.array(maxtab), numpy.array(mintab)
 
+
+def print_json(x):
+    """Print to nicely formatted json"""
+    print(json.dumps(x, indent=2))

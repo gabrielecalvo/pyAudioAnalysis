@@ -1,3 +1,8 @@
+# Disclaimer
+This is a forked version of the [original pyAudioAnalysis project] (https://github.com/tyiannak/pyAudioAnalysis),
+I forked this code to port it to python 3 some functions I'm interested in and add some custom functionality.
+I am not currently looking to port and test all features.
+Below is the original documentation:
 
 # <img src="icon.png" align="left" height="130"/> A Python library for audio feature extraction, classification, segmentation and applications
 
