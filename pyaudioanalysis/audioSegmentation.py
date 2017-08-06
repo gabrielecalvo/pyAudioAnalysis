@@ -16,7 +16,7 @@ from scipy.spatial import distance
 
 from pyaudioanalysis import audioTrainTest as aT
 
-RESOURCE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'resources')
+RESOURCE_PATH = os.path.join(os.path.dirname(__file__), 'resources')
 
 """ General utility functions """
 
