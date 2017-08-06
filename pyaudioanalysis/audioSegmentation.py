@@ -16,7 +16,7 @@ from scipy.spatial import distance
 
 from pyaudioanalysis import audioTrainTest as aT
 
-DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+RESOURCE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'resources')
 
 """ General utility functions """
 
@@ -707,9 +707,9 @@ def speaker_diarization(filepath, num_of_speakers=0, mt_size=2.0, mt_step=0.2, s
     duration = len(data) / framerate
 
     Classifier1, MEAN1, STD1, classNames1, mtWin1, mtStep1, stWin1, stStep1, computeBEAT1 = aT.load_knn_model(
-        os.path.join(DATA_PATH, "knnSpeakerAll"))
+        os.path.join(RESOURCE_PATH, "knnSpeakerAll"))
     Classifier2, MEAN2, STD2, classNames2, mtWin2, mtStep2, stWin2, stStep2, computeBEAT2 = aT.load_knn_model(
-        os.path.join(DATA_PATH, "knnSpeakerFemaleMale"))
+        os.path.join(RESOURCE_PATH, "knnSpeakerFemaleMale"))
 
     [MidTermFeatures, ShortTermFeatures] = aF.mtFeatureExtraction(data, framerate, mt_size * framerate,
                                                                   mt_step * framerate, round(framerate * st_win),

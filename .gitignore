@@ -6,4 +6,4 @@
 py2/
 _scripts_
 */__pycache__/
-data/
+_data/
